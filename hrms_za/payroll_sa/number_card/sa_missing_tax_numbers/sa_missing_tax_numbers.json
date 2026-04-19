@@ -1,0 +1,20 @@
+{
+ "creation": "2026-04-19 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "document_type": "Employee",
+ "dynamic_filters_json": "[[\"Employee\",\"company\",\"=\",\"frappe.defaults.get_user_default(\\\"Company\\\")\"]]",
+ "filters_json": "[[\"Employee\",\"status\",\"=\",\"Active\"],[\"Employee\",\"sa_tax_reference\",\"in\",[\"\",null]]]",
+ "function": "Count",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "label": "SA Employees Missing Tax Number",
+ "modified": "2026-04-19 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Payroll SA",
+ "name": "SA Employees Missing Tax Number",
+ "owner": "Administrator",
+ "show_percentage_stats": 0,
+ "type": "Document Type"
+}

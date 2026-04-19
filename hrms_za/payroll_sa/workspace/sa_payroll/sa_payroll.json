@@ -1,0 +1,68 @@
+{
+ "app": "hrms_za",
+ "charts": [
+  {"chart_name": "SA Monthly Payroll Cost",              "label": "Monthly Payroll Cost"},
+  {"chart_name": "SA Department Payroll (This Month)",   "label": "Department Payroll (This Month)"},
+  {"chart_name": "SA Statutory Contributions (This Month)","label": "Statutory Contributions (This Month)"}
+ ],
+ "content": "[{\"id\":\"h1\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>SA Payroll — Month at a Glance</b></span>\",\"col\":12}},{\"id\":\"nc1\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"SA Total Payroll Cost (Month)\",\"col\":3}},{\"id\":\"nc2\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"SA Total PAYE Liability (Month)\",\"col\":3}},{\"id\":\"nc3\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"SA Total UIF Contributions (Month)\",\"col\":3}},{\"id\":\"nc4\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"SA Employees Missing Tax Number\",\"col\":3}},{\"id\":\"nc5\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"SA Employees Missing UIF Reference\",\"col\":3}},{\"id\":\"sp1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"h2\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Trends</b></span>\",\"col\":12}},{\"id\":\"ch1\",\"type\":\"chart\",\"data\":{\"chart_name\":\"SA Monthly Payroll Cost\",\"col\":12}},{\"id\":\"ch2\",\"type\":\"chart\",\"data\":{\"chart_name\":\"SA Department Payroll (This Month)\",\"col\":6}},{\"id\":\"ch3\",\"type\":\"chart\",\"data\":{\"chart_name\":\"SA Statutory Contributions (This Month)\",\"col\":6}},{\"id\":\"sp2\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"h3\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports & SARS Submissions</b></span>\",\"col\":12}},{\"id\":\"sc1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"SA Payroll Matrix\",\"col\":3}},{\"id\":\"sc2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"EMP201 Monthly Return\",\"col\":3}},{\"id\":\"sc3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"EMP501 Reconciliation\",\"col\":3}},{\"id\":\"sc4\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"IRP5/IT3(a) Certificate\",\"col\":3}},{\"id\":\"sc5\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Employees\",\"col\":3}},{\"id\":\"sc6\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Salary Slips\",\"col\":3}},{\"id\":\"sc7\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Payroll Entry\",\"col\":3}},{\"id\":\"sc8\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Leave Allocation\",\"col\":3}},{\"id\":\"sp3\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"h4\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Masters & Configuration</b></span>\",\"col\":12}},{\"id\":\"cd1\",\"type\":\"card\",\"data\":{\"card_name\":\"SA Master Data\",\"col\":4}},{\"id\":\"cd2\",\"type\":\"card\",\"data\":{\"card_name\":\"Payroll Processing\",\"col\":4}},{\"id\":\"cd3\",\"type\":\"card\",\"data\":{\"card_name\":\"Leave & Compliance\",\"col\":4}}]",
+ "creation": "2026-04-19 00:00:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "hr",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "SA Payroll",
+ "links": [
+  {"hidden": 0, "is_query_report": 0, "label": "SA Master Data", "link_count": 4, "onboard": 0, "type": "Card Break"},
+  {"hidden": 0, "is_query_report": 0, "label": "Employee",          "link_to": "Employee",          "link_type": "DocType", "onboard": 0, "type": "Link"},
+  {"hidden": 0, "is_query_report": 0, "label": "Employment Type",   "link_to": "Employment Type",   "link_type": "DocType", "onboard": 0, "type": "Link"},
+  {"hidden": 0, "is_query_report": 0, "label": "Salary Component",  "link_to": "Salary Component",  "link_type": "DocType", "onboard": 0, "type": "Link"},
+  {"hidden": 0, "is_query_report": 0, "label": "Salary Structure",  "link_to": "Salary Structure",  "link_type": "DocType", "onboard": 0, "type": "Link"},
+
+  {"hidden": 0, "is_query_report": 0, "label": "Payroll Processing", "link_count": 4, "onboard": 0, "type": "Card Break"},
+  {"hidden": 0, "is_query_report": 0, "label": "Payroll Entry",      "link_to": "Payroll Entry",      "link_type": "DocType", "onboard": 0, "type": "Link"},
+  {"hidden": 0, "is_query_report": 0, "label": "Salary Slip",        "link_to": "Salary Slip",        "link_type": "DocType", "onboard": 0, "type": "Link"},
+  {"hidden": 0, "is_query_report": 0, "label": "Salary Structure Assignment", "link_to": "Salary Structure Assignment", "link_type": "DocType", "onboard": 0, "type": "Link"},
+  {"hidden": 0, "is_query_report": 0, "label": "Income Tax Slab",    "link_to": "Income Tax Slab",    "link_type": "DocType", "onboard": 0, "type": "Link"},
+
+  {"hidden": 0, "is_query_report": 0, "label": "Leave & Compliance", "link_count": 4, "onboard": 0, "type": "Card Break"},
+  {"hidden": 0, "is_query_report": 0, "label": "Leave Type",         "link_to": "Leave Type",         "link_type": "DocType", "onboard": 0, "type": "Link"},
+  {"hidden": 0, "is_query_report": 0, "label": "Leave Allocation",   "link_to": "Leave Allocation",   "link_type": "DocType", "onboard": 0, "type": "Link"},
+  {"hidden": 0, "is_query_report": 0, "label": "Leave Application",  "link_to": "Leave Application",  "link_type": "DocType", "onboard": 0, "type": "Link"},
+  {"hidden": 0, "is_query_report": 0, "label": "Employee Leave Balance Summary", "link_to": "Employee Leave Balance Summary", "link_type": "Report", "is_query_report": 1, "onboard": 0, "type": "Link"}
+ ],
+ "modified": "2026-04-19 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Payroll SA",
+ "name": "SA Payroll",
+ "number_cards": [
+  {"number_card_name": "SA Total Payroll Cost (Month)",       "label": "Total Payroll (Month)"},
+  {"number_card_name": "SA Total PAYE Liability (Month)",     "label": "Total PAYE (Month)"},
+  {"number_card_name": "SA Total UIF Contributions (Month)",  "label": "Total UIF (Month)"},
+  {"number_card_name": "SA Employees Missing Tax Number",     "label": "Missing Tax Numbers"},
+  {"number_card_name": "SA Employees Missing UIF Reference",  "label": "Missing UIF Refs"}
+ ],
+ "owner": "Administrator",
+ "parent_page": "",
+ "pin_to_bottom": 0,
+ "pin_to_top": 0,
+ "public": 1,
+ "restrict_to_domain": "",
+ "roles": [],
+ "sequence_id": 99.0,
+ "shortcuts": [
+  {"type": "Report",   "link_to": "SA Payroll Matrix",        "label": "SA Payroll Matrix",       "doc_view": "Report Builder", "color": "Blue"},
+  {"type": "Report",   "link_to": "EMP201 Monthly Return",    "label": "EMP201 Monthly Return",   "doc_view": "Report Builder", "color": "Green"},
+  {"type": "Report",   "link_to": "EMP501 Reconciliation",    "label": "EMP501 Reconciliation",   "doc_view": "Report Builder", "color": "Green"},
+  {"type": "Report",   "link_to": "IRP5/IT3(a) Certificate",  "label": "IRP5/IT3(a) Certificate", "doc_view": "Report Builder", "color": "Green"},
+  {"type": "DocType",  "link_to": "Employee",                 "label": "Employees",               "doc_view": "List",            "color": "Grey"},
+  {"type": "DocType",  "link_to": "Salary Slip",              "label": "Salary Slips",            "doc_view": "List",            "color": "Grey"},
+  {"type": "DocType",  "link_to": "Payroll Entry",            "label": "Payroll Entry",           "doc_view": "List",            "color": "Grey"},
+  {"type": "DocType",  "link_to": "Leave Allocation",         "label": "Leave Allocation",        "doc_view": "List",            "color": "Grey"}
+ ],
+ "title": "SA Payroll"
+}

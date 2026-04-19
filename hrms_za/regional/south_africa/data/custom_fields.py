@@ -59,6 +59,46 @@ def get_custom_fields():
                 "insert_after": "uif_contributor",
                 "depends_on": "eval:doc.uif_contributor",
             },
+            {
+                "fieldname": "medical_aid_section",
+                "label": "Medical Aid (for s6A PAYE credit)",
+                "fieldtype": "Section Break",
+                "insert_after": "uif_reference",
+                "collapsible": 1,
+            },
+            {
+                "fieldname": "medical_aid_scheme",
+                "label": "Medical Aid Scheme",
+                "fieldtype": "Data",
+                "insert_after": "medical_aid_section",
+            },
+            {
+                "fieldname": "medical_aid_members",
+                "label": "Total Members (incl. main)",
+                "fieldtype": "Int",
+                "insert_after": "medical_aid_scheme",
+                "default": "0",
+                "description": (
+                    "Total covered lives including the employee. Drives the "
+                    "SA PAYE calculator's medical scheme fees tax credit (s6A)."
+                ),
+            },
+            {
+                "fieldname": "medical_aid_cb",
+                "fieldtype": "Column Break",
+                "insert_after": "medical_aid_members",
+            },
+            {
+                "fieldname": "medical_aid_monthly_contribution",
+                "label": "Monthly Contribution",
+                "fieldtype": "Currency",
+                "insert_after": "medical_aid_cb",
+                "description": (
+                    "Monthly premium paid to scheme. Stored for future s6B "
+                    "(excess medical expenses) credit calc; not yet used by "
+                    "the PAYE calculator."
+                ),
+            },
         ],
         "Company": [
             {

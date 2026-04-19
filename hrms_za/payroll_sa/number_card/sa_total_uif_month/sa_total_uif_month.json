@@ -1,0 +1,22 @@
+{
+ "aggregate_function_based_on": "amount",
+ "creation": "2026-04-19 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "document_type": "Salary Detail",
+ "dynamic_filters_json": "",
+ "filters_json": "[[\"Salary Detail\",\"salary_component\",\"in\",[\"UIF - Employee\",\"UIF - Employer\"]],[\"Salary Detail\",\"parenttype\",\"=\",\"Salary Slip\"]]",
+ "function": "Sum",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "label": "SA Total UIF Contributions (Month)",
+ "modified": "2026-04-19 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Payroll SA",
+ "name": "SA Total UIF Contributions (Month)",
+ "owner": "Administrator",
+ "show_percentage_stats": 1,
+ "stats_time_interval": "Monthly",
+ "type": "Document Type"
+}

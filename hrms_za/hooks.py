@@ -13,4 +13,7 @@ doc_events = {
     "Company": {
         "on_update": "hrms_za.regional.south_africa.setup.on_company_update",
     },
+    "Salary Slip": {
+        "validate": "hrms_za.payroll_sa.paye_calculator.adjust_sa_paye",
+    },
 }
