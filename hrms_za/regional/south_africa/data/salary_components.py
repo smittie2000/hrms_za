@@ -75,29 +75,34 @@ SALARY_COMPONENTS = [
         "salary_component": "UIF - Employer",
         "abbr": "UIFR",
         "type": "Deduction",
-        "statistical_component": 1,
+        "statistical_component": 0,
         "amount_based_on_formula": 1,
         "formula": f"(gross_pay if gross_pay < {UIF_MONTHLY_CEILING} else {UIF_MONTHLY_CEILING}) * 0.01",
         "depends_on_payment_days": 0,
         "do_not_include_in_total": 1,
+        "remove_if_zero_valued": 0,
         "description": (
-            "Statistical — employer's matching 1%. Not deducted from employee; "
-            "tracked for EMP201 submission."
+            "Employer's matching 1% UIF. do_not_include_in_total=1 keeps it "
+            "off net_pay but visible on the slip + queryable for EMP201. "
+            "Not 'statistical' because HRMS drops statistical rows from the "
+            "slip entirely (see salary_slip.py:1198)."
         ),
     },
     {
         "salary_component": "SDL",
         "abbr": "SDL",
         "type": "Deduction",
-        "statistical_component": 1,
+        "statistical_component": 0,
         "amount_based_on_formula": 1,
         "formula": "gross_pay * 0.01",
         "depends_on_payment_days": 0,
         "do_not_include_in_total": 1,
+        "remove_if_zero_valued": 0,
         "description": (
             "Skills Development Levy — 1% of total remuneration, employer-paid. "
-            "Statistical: not deducted from employee. Small employers "
-            "(< R500k annual payroll) are SDL-exempt."
+            "do_not_include_in_total=1 so it doesn't deduct from employee net. "
+            "Small employers (< R500k annual payroll) are SDL-exempt — either "
+            "remove this component from the Salary Structure or disable it."
         ),
     },
     {
