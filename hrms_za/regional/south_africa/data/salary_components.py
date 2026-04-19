@@ -67,7 +67,7 @@ SALARY_COMPONENTS = [
         "abbr": "UIFE",
         "type": "Deduction",
         "amount_based_on_formula": 1,
-        "formula": f"min(gross_pay, {UIF_MONTHLY_CEILING}) * 0.01",
+        "formula": f"(gross_pay if gross_pay < {UIF_MONTHLY_CEILING} else {UIF_MONTHLY_CEILING}) * 0.01",
         "depends_on_payment_days": 0,
         "round_to_the_nearest_integer": 0,
     },
@@ -77,7 +77,7 @@ SALARY_COMPONENTS = [
         "type": "Deduction",
         "statistical_component": 1,
         "amount_based_on_formula": 1,
-        "formula": f"min(gross_pay, {UIF_MONTHLY_CEILING}) * 0.01",
+        "formula": f"(gross_pay if gross_pay < {UIF_MONTHLY_CEILING} else {UIF_MONTHLY_CEILING}) * 0.01",
         "depends_on_payment_days": 0,
         "do_not_include_in_total": 1,
         "description": (

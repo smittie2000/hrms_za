@@ -43,24 +43,17 @@ PAYE_COMPONENT = "PAYE"
 # Pure function — safe to unit-test without Frappe
 # ---------------------------------------------------------------------------
 
-def compute_sa_paye(
+def compute_sa_paye_annual(
     slab_annual_tax: float,
     age: int,
     medical_members: int,
     tax_year: str,
 ) -> float:
     """
-    Return the monthly PAYE amount in Rands.
+    Return the ANNUAL PAYE after SA rebates + medical credits, clamped at zero.
 
-    Args:
-        slab_annual_tax: annual tax computed from SARS brackets on the
-            employee's taxable income (HRMS already produces this).
-        age: employee age at end of the tax period.
-        medical_members: total covered lives on medical aid (inc. employee).
-        tax_year: SARS label, e.g. "2027" for 1 Mar 2026 – 28 Feb 2027.
-
-    Raises:
-        KeyError if tax_year is not configured in paye_parameters.
+    Caller is responsible for distributing this across payroll-period months.
+    This is the "pure" SA-specific step — no assumption about monthly spread.
     """
     rebate = REBATES[tax_year]["primary"]
     if age >= 65:
@@ -78,8 +71,27 @@ def compute_sa_paye(
         monthly_credit += mc["additional_dependant"] * (medical_members - 2)
     annual_credit = monthly_credit * 12
 
-    annual_paye = max(0.0, slab_annual_tax - rebate - annual_credit)
-    return annual_paye / 12
+    return max(0.0, slab_annual_tax - rebate - annual_credit)
+
+
+def compute_sa_paye(
+    slab_annual_tax: float,
+    age: int,
+    medical_members: int,
+    tax_year: str,
+) -> float:
+    """
+    Return the monthly PAYE amount in Rands, assuming the annual tax is spread
+    over all 12 months (i.e. payroll runs from month 1 of the tax year).
+
+    Kept for unit-test readability against SARS-published worked examples.
+    The hook uses `compute_sa_paye_annual` directly and scales by the actual
+    ratio HRMS is using.
+
+    Raises:
+        KeyError if tax_year is not configured in paye_parameters.
+    """
+    return compute_sa_paye_annual(slab_annual_tax, age, medical_members, tax_year) / 12
 
 
 # ---------------------------------------------------------------------------
@@ -94,8 +106,16 @@ def adjust_sa_paye(doc, method=None):
 
     Fires on Salary Slip `validate`. No-op for non-SA companies, slips
     without a PAYE row, or posting dates outside a configured tax-year window.
+
+    Important: HRMS spreads the annual slab tax across the remaining months
+    in the Payroll Period, not always 12. If a payroll run is backfilled or
+    the period has already passed through some months, `paye_row.amount * 12`
+    would NOT equal the true annual slab tax. So we read `doc.total_income_tax`
+    (the authoritative annual number HRMS has already computed) and use the
+    ratio `monthly / annual` to scale rebate + credit relief consistently
+    with however many months HRMS is distributing over.
     """
-    # Lazy import so the pure compute_sa_paye function above is unit-testable
+    # Lazy imports so the pure functions in this module are unit-testable
     # outside a Frappe runtime.
     import frappe
     from frappe.utils import flt
@@ -115,6 +135,11 @@ def adjust_sa_paye(doc, method=None):
         # Add a new entry to paye_parameters.TAX_YEAR_WINDOWS when this fires.
         return
 
+    slab_annual_tax = flt(getattr(doc, "total_income_tax", 0) or 0)
+    monthly_slab_paye = flt(paye_row.amount)
+    if slab_annual_tax <= 0 or monthly_slab_paye <= 0:
+        return
+
     emp = frappe.db.get_value(
         "Employee",
         doc.employee,
@@ -125,13 +150,15 @@ def adjust_sa_paye(doc, method=None):
     age = _age_at(emp.get("date_of_birth"), doc.end_date)
     members = int(flt(emp.get("medical_aid_members")))
 
-    slab_annual_tax = flt(paye_row.amount) * 12
-    new_monthly_paye = compute_sa_paye(
+    effective_annual_paye = compute_sa_paye_annual(
         slab_annual_tax=slab_annual_tax,
         age=age,
         medical_members=members,
         tax_year=tax_year,
     )
+    # ratio = 1 / remaining_months_in_payroll_period, matching HRMS's split.
+    ratio = monthly_slab_paye / slab_annual_tax
+    new_monthly_paye = effective_annual_paye * ratio
 
     _apply_paye_adjustment(doc, paye_row, new_monthly_paye)
 
