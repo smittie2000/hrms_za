@@ -1,0 +1,2 @@
+# List of patches to be run on bench migrate, one per line.
+# Format: <app>.patches.<module>.<patch_name>
