@@ -162,6 +162,12 @@ On the Company form:
 2. In the **South African Statutory References** section: fill `PAYE Reference Number` (10 digits, starts with 7), `UIF Reference Number` (starts with U), `SDL Reference Number` (starts with L), `SARS Registered Trading Name`.
 3. Open **Income Tax Slab** list → confirm `SA Tax 2026/2027 - <Company>` exists and is enabled. Confirm `SA Tax 2025/2026 - <Company>` exists and is disabled (historical reference only).
 4. Create a `Payroll Period` covering the current tax year (1 March 2026 – 28 February 2027).
+5. **Generate the Holiday List for the calendar year.** Without one set as the Company's `Default Holiday List`, every Salary Slip fails with *"No Holiday List was found for Employee X or their company Y"*. `hrms_za` ships a whitelisted helper — call it once per year from `bench console`:
+   ```python
+   from hrms_za.regional.south_africa.holidays import generate_sa_holiday_list
+   generate_sa_holiday_list(2026, company="Hosted Communications")
+   ```
+   Result: a `South Africa 2026` Holiday List containing all 12 statutory public holidays (fixed + Easter-dependent, Sunday→Monday substitutions applied per Public Holidays Act 36 of 1994) plus every Saturday and Sunday as weekly offs. Assigned as `default_holiday_list` on the named Company. Ad-hoc holidays (election days, declared days of mourning) are NOT auto-generated — add them to the list manually as they're announced. Re-running for the same year refreshes the list in-place.
 
 ### 9.3 Employee setup (HR Manager, per employee)
 
