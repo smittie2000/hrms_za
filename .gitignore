@@ -9,7 +9,8 @@ node_modules/
 dist/
 build/
 
-# Local/working docs — keep only README.md + PLAN.md in the repo
+# Local/working docs — keep only README.md + PLAN.md + committed specs in the repo
 *.md
 !README.md
 !PLAN.md
+!docs/superpowers/specs/*.md
