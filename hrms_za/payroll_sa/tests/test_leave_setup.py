@@ -28,12 +28,12 @@ from hrms_za.regional.south_africa.leave import (
     auto_fill_leave_approvers,
 )
 from hrms_za.regional.south_africa.setup import (
-    _current_cycle_window_for_date,
-    _resolve_sa_standard_leave_policy,
+    current_cycle_window_for_date,
     install_ess_permissions,
     install_leave_policy,
     install_notifications,
     install_sa_leave_settings_defaults,
+    resolve_sa_standard_leave_policy,
 )
 
 
@@ -111,11 +111,11 @@ class TestSeeders(FrappeTestCase):
 
     def test_leave_policy_seed_is_seed_once(self):
         install_leave_policy()
-        first = _resolve_sa_standard_leave_policy()
+        first = resolve_sa_standard_leave_policy()
         self.assertIsNotNone(first, "policy must be created")
 
         install_leave_policy()  # must be no-op
-        self.assertEqual(_resolve_sa_standard_leave_policy(), first)
+        self.assertEqual(resolve_sa_standard_leave_policy(), first)
 
     def test_notifications_seed_is_idempotent(self):
         install_notifications()
@@ -153,13 +153,13 @@ class TestSeeders(FrappeTestCase):
 class TestCycleWindow(FrappeTestCase):
     def test_1_jan_anchor_mid_year(self):
         install_sa_leave_settings_defaults()
-        frm, to = _current_cycle_window_for_date("2026-07-15")
+        frm, to = current_cycle_window_for_date("2026-07-15")
         self.assertEqual(getdate(frm), getdate("2026-01-01"))
         self.assertEqual(getdate(to), getdate("2026-12-31"))
 
     def test_1_jan_anchor_on_anchor(self):
         install_sa_leave_settings_defaults()
-        frm, to = _current_cycle_window_for_date("2026-01-01")
+        frm, to = current_cycle_window_for_date("2026-01-01")
         self.assertEqual(getdate(frm), getdate("2026-01-01"))
         self.assertEqual(getdate(to), getdate("2026-12-31"))
 
@@ -171,7 +171,7 @@ class TestCycleWindow(FrappeTestCase):
         s.save(ignore_permissions=True)
         try:
             # Feb 15 2026 is BEFORE the 1-March anchor → falls in 2025/26 cycle
-            frm, to = _current_cycle_window_for_date("2026-02-15")
+            frm, to = current_cycle_window_for_date("2026-02-15")
             self.assertEqual(getdate(frm), getdate("2025-03-01"))
             self.assertEqual(getdate(to), getdate("2026-02-28"))
         finally:
@@ -193,7 +193,7 @@ class TestEmployeeAutoAssign(FrappeTestCase):
         _ensure_company(TEST_COMPANY_NAME, TEST_COMPANY_ABBR, "South Africa")
         _ensure_company(TEST_NON_SA_COMPANY, TEST_NON_SA_ABBR, "United States")
         # Force a Leave Period covering today on the SA test company.
-        frm, to = _current_cycle_window_for_date(today())
+        frm, to = current_cycle_window_for_date(today())
         if not frappe.db.exists(
             "Leave Period",
             {"company": TEST_COMPANY_NAME, "from_date": frm},

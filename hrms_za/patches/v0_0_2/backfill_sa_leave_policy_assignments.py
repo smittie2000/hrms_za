@@ -68,16 +68,7 @@ def execute():
 
         try:
             emp = frappe.get_doc("Employee", emp_name)
-            # Capture pre-count so we can tell whether the guards short-
-            # circuited (→ skipped) vs actually created an assignment.
-            before = frappe.db.count(
-                "Leave Policy Assignment", {"employee": emp_name, "docstatus": 1}
-            )
-            _try_assign_default_policy(emp)
-            after = frappe.db.count(
-                "Leave Policy Assignment", {"employee": emp_name, "docstatus": 1}
-            )
-            if after > before:
+            if _try_assign_default_policy(emp):
                 created += 1
             else:
                 skipped += 1
