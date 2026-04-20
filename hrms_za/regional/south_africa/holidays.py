@@ -55,13 +55,15 @@ def generate_sa_holiday_list(
             "weekly_off": 0,
         })
 
-    # v16 Holiday List accepts a single weekday in `weekly_off`. Call
-    # get_weekly_off_dates() twice to cover both Saturday and Sunday.
+    # Holiday List's `weekly_off` is a single-weekday Select (not required).
+    # get_weekly_off_dates() reads self.weekly_off, so toggle + call twice to
+    # append both Saturdays and Sundays as weekly-off rows — the rows carry
+    # weekly_off=1 per day, so the parent field can stay blank afterwards.
     doc.weekly_off = "Sunday"
     doc.get_weekly_off_dates()
     doc.weekly_off = "Saturday"
     doc.get_weekly_off_dates()
-    doc.weekly_off = "Sunday"  # keep the single required declared value
+    doc.weekly_off = None
 
     if doc.is_new():
         doc.insert(ignore_permissions=True)

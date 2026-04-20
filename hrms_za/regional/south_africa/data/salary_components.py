@@ -24,28 +24,28 @@ UIF_MONTHLY_CEILING = 17712
 SALARY_COMPONENTS = [
     {
         "salary_component": "Basic",
-        "abbr": "B",
+        "salary_component_abbr": "B",
         "type": "Earning",
         "is_tax_applicable": 1,
         "depends_on_payment_days": 1,
     },
     {
         "salary_component": "Overtime",
-        "abbr": "OT",
+        "salary_component_abbr": "OT",
         "type": "Earning",
         "is_tax_applicable": 1,
         "depends_on_payment_days": 0,
     },
     {
         "salary_component": "Bonus",
-        "abbr": "BON",
+        "salary_component_abbr": "BON",
         "type": "Earning",
         "is_tax_applicable": 1,
         "depends_on_payment_days": 0,
     },
     {
         "salary_component": "Travel Allowance",
-        "abbr": "TA",
+        "salary_component_abbr": "TA",
         "type": "Earning",
         "is_tax_applicable": 1,
         "depends_on_payment_days": 1,
@@ -57,14 +57,14 @@ SALARY_COMPONENTS = [
     },
     {
         "salary_component": "Cellphone Allowance",
-        "abbr": "CA",
+        "salary_component_abbr": "CA",
         "type": "Earning",
         "is_tax_applicable": 1,
         "depends_on_payment_days": 1,
     },
     {
         "salary_component": "UIF - Employee",
-        "abbr": "UIFE",
+        "salary_component_abbr": "UIFE",
         "type": "Deduction",
         "amount_based_on_formula": 1,
         "formula": f"(gross_pay if gross_pay < {UIF_MONTHLY_CEILING} else {UIF_MONTHLY_CEILING}) * 0.01",
@@ -73,7 +73,7 @@ SALARY_COMPONENTS = [
     },
     {
         "salary_component": "UIF - Employer",
-        "abbr": "UIFR",
+        "salary_component_abbr": "UIFR",
         "type": "Deduction",
         "statistical_component": 0,
         "amount_based_on_formula": 1,
@@ -90,7 +90,7 @@ SALARY_COMPONENTS = [
     },
     {
         "salary_component": "SDL",
-        "abbr": "SDL",
+        "salary_component_abbr": "SDL",
         "type": "Deduction",
         "statistical_component": 0,
         "amount_based_on_formula": 1,
@@ -107,7 +107,7 @@ SALARY_COMPONENTS = [
     },
     {
         "salary_component": "PAYE",
-        "abbr": "PAYE",
+        "salary_component_abbr": "PAYE",
         "type": "Deduction",
         "variable_based_on_taxable_salary": 1,
         "is_income_tax_component": 1,

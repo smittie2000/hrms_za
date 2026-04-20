@@ -105,11 +105,15 @@ def install_income_tax_slabs(company):
     Create an Income Tax Slab per SARS tax year, per company. Never overwrite
     an existing record — the tenant may have tweaked thresholds, toggled
     disabled, or reassigned the slab to a Payroll Period.
+
+    Income Tax Slab is submittable in v16; Salary Structure Assignment only
+    accepts submitted slabs. Insert + submit in one shot.
     """
     for definition in INCOME_TAX_SLABS:
         payload = dict(definition)
         slabs = payload.pop("slabs")
-        name = f"{payload['name']} - {company}"
+        base_name = payload.pop("name")
+        name = f"{base_name} - {company}"
 
         if frappe.db.exists("Income Tax Slab", name):
             continue
@@ -124,3 +128,4 @@ def install_income_tax_slabs(company):
             ],
         })
         doc.insert(ignore_permissions=True)
+        doc.submit()

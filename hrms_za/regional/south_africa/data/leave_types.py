@@ -23,17 +23,15 @@ LEAVE_TYPES = [
         "allow_encashment": 1,
         "allow_negative": 0,
     },
+    # Sick Leave: BCEA s22 mandates 30 days per 36-month cycle. The rolling
+    # 36-month window is not modelled yet — treat as 30 days/year until a
+    # dedicated SA Sick Leave Cycle doctype ships.
     {
         "leave_type_name": "Sick Leave (SA)",
         "max_leaves_allowed": 30,
         "is_earned_leave": 0,
         "is_carry_forward": 0,
         "allow_negative": 0,
-        "description": (
-            "BCEA s22: 30 days per 36-month cycle. The rolling cycle is not "
-            "modelled yet — treat as 30 days/year until the SA Sick Leave Cycle "
-            "doctype ships."
-        ),
     },
     {
         "leave_type_name": "Family Responsibility Leave (SA)",
