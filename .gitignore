@@ -9,6 +9,7 @@ node_modules/
 dist/
 build/
 
-# Local/working docs — keep only README.md in the repo
+# Local/working docs — keep only README.md + PLAN.md in the repo
 *.md
 !README.md
+!PLAN.md
