@@ -1,0 +1,14 @@
+<p>Hi {{ doc.employee_name }},</p>
+
+<p>Your leave request <b>{{ doc.name }}</b> has been <b style="color: #28a745;">approved</b>.</p>
+
+<table style="border-collapse: collapse; margin: 12px 0;">
+    <tr><td style="padding: 4px 12px;"><b>Leave Type:</b></td><td style="padding: 4px 12px;">{{ doc.leave_type }}</td></tr>
+    <tr><td style="padding: 4px 12px;"><b>From:</b></td><td style="padding: 4px 12px;">{{ frappe.utils.formatdate(doc.from_date) }}</td></tr>
+    <tr><td style="padding: 4px 12px;"><b>To:</b></td><td style="padding: 4px 12px;">{{ frappe.utils.formatdate(doc.to_date) }}</td></tr>
+    <tr><td style="padding: 4px 12px;"><b>Days:</b></td><td style="padding: 4px 12px;">{{ doc.total_leave_days }}</td></tr>
+</table>
+
+<p><a href="{{ frappe.utils.get_url() }}/app/leave-application/{{ doc.name }}">View {{ doc.name }}</a></p>
+
+<p>— HR</p>

@@ -1,2 +1,3 @@
 # List of patches to be run on bench migrate, one per line.
 # Format: <app>.patches.<module>.<patch_name>
+hrms_za.patches.v0_0_2.backfill_sa_leave_policy_assignments

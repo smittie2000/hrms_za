@@ -22,7 +22,29 @@ from hrms_za.regional.south_africa.data.leave_policy import (
     LEAVE_POLICY_NAME,
 )
 from hrms_za.regional.south_africa.data.leave_types import LEAVE_TYPES
+from hrms_za.regional.south_africa.data.notifications import NOTIFICATIONS
 from hrms_za.regional.south_africa.data.salary_components import SALARY_COMPONENTS
+
+
+# Custom DocPerm rows granted to Employee Self Service on first install.
+# Dedupe key is (parent, role, permlevel, if_owner) — Custom DocPerm has no
+# unique constraint, so re-runs must check before inserting.
+ESS_PERMISSIONS = [
+    {
+        "parent": "Leave Application",
+        "role": "Employee Self Service",
+        "permlevel": 0,
+        "if_owner": 1,
+        "perms": {"read": 1, "write": 1, "create": 1, "submit": 1},
+    },
+    {
+        "parent": "Leave Allocation",
+        "role": "Employee Self Service",
+        "permlevel": 0,
+        "if_owner": 1,
+        "perms": {"read": 1},
+    },
+]
 
 
 # ---------------------------------------------------------------------------
@@ -57,6 +79,8 @@ def setup_site_wide():
     install_salary_components()
     install_leave_policy()
     install_sa_leave_settings_defaults()
+    install_notifications()
+    install_ess_permissions()
 
 
 def install_custom_fields():
@@ -184,6 +208,120 @@ def install_sa_leave_settings_defaults():
 
     if changed:
         settings.save(ignore_permissions=True)
+
+
+def install_notifications():
+    """
+    Seed 3 Notification records (submitted / approved / rejected) on Leave
+    Application. Message bodies come from sibling HTML files under
+    data/email_bodies/ and are inlined into the Notification.message field
+    at install time.
+
+    Seed-once contract: if the Notification record exists (by name) we skip,
+    so HR can freely amend message bodies or subjects without the seeder
+    fighting back.
+    """
+    import os
+
+    base_path = os.path.join(
+        os.path.dirname(__file__), "data", "email_bodies"
+    )
+
+    for name, body_file, payload in NOTIFICATIONS:
+        if frappe.db.exists("Notification", name):
+            continue
+
+        body = frappe.read_file(os.path.join(base_path, body_file))
+        frappe.get_doc({
+            "doctype": "Notification",
+            "name": name,
+            "subject": payload["subject"],
+            "document_type": payload["document_type"],
+            "event": payload["event"],
+            "value_changed": payload.get("value_changed"),
+            "condition": payload.get("condition"),
+            "channel": payload["channel"],
+            "enabled": payload["enabled"],
+            "message": body or "",
+            "recipients": payload["recipients"],
+        }).insert(ignore_permissions=True)
+
+
+def install_ess_permissions():
+    """
+    Seed Custom DocPerm rows so Employee Self Service users can submit their
+    own Leave Applications and see their own Leave Allocations on the ESS
+    portal. Dedupe by (parent, role, permlevel, if_owner) — Custom DocPerm
+    has no unique constraint so a second install without this check would
+    stack duplicate rows and confuse the permission resolver.
+    """
+    for spec in ESS_PERMISSIONS:
+        filters = {
+            "parent": spec["parent"],
+            "role": spec["role"],
+            "permlevel": spec["permlevel"],
+            "if_owner": spec["if_owner"],
+        }
+        if frappe.db.exists("Custom DocPerm", filters):
+            continue
+
+        frappe.get_doc({
+            "doctype": "Custom DocPerm",
+            "parent": spec["parent"],
+            "parenttype": "DocType",
+            "parentfield": "permissions",
+            "role": spec["role"],
+            "permlevel": spec["permlevel"],
+            "if_owner": spec["if_owner"],
+            **spec["perms"],
+        }).insert(ignore_permissions=True)
+
+
+def before_uninstall():
+    """
+    Teardown seeded app-config state so a reinstall starts clean.
+
+    What this DOES remove:
+      - The 3 seeded Notification records (by name).
+      - The seeded Custom DocPerm rows (matched on parent/role/permlevel/if_owner).
+
+    What this DELIBERATELY LEAVES behind:
+      - Leave Policy Assignments, Leave Allocations, Leave Periods — they're
+        tenant data tied to real employees and historical payroll runs.
+      - The SA Standard Leave Policy — HR may have amended / renamed it.
+      - Custom fields on Employee / Company — removing them would delete
+        tenant data (tax numbers, UIF refs, medical aid info).
+
+    The `SA Leave Settings` Single is dropped automatically by Frappe when
+    the doctype itself is removed during uninstall.
+    """
+    for name, _body_file, _payload in NOTIFICATIONS:
+        if frappe.db.exists("Notification", name):
+            try:
+                frappe.delete_doc("Notification", name, ignore_permissions=True)
+            except Exception:
+                frappe.log_error(
+                    title="hrms_za uninstall: Notification removal failed",
+                    message=f"Notification: {name}",
+                )
+
+    for spec in ESS_PERMISSIONS:
+        filters = {
+            "parent": spec["parent"],
+            "role": spec["role"],
+            "permlevel": spec["permlevel"],
+            "if_owner": spec["if_owner"],
+        }
+        for row in frappe.get_all("Custom DocPerm", filters=filters, pluck="name"):
+            try:
+                frappe.delete_doc(
+                    "Custom DocPerm", row, ignore_permissions=True, force=True
+                )
+            except Exception:
+                frappe.log_error(
+                    title="hrms_za uninstall: Custom DocPerm removal failed",
+                    message=f"Custom DocPerm: {row}",
+                )
 
 
 # ---------------------------------------------------------------------------

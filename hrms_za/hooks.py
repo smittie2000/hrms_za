@@ -8,6 +8,7 @@ app_license = "mit"
 required_apps = ["frappe/erpnext", "frappe/hrms"]
 
 after_install = "hrms_za.regional.south_africa.setup.after_install"
+before_uninstall = "hrms_za.regional.south_africa.setup.before_uninstall"
 
 doc_events = {
     "Company": {

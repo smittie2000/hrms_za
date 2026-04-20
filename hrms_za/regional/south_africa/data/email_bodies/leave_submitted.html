@@ -1,0 +1,15 @@
+<p>Hi,</p>
+
+<p><b>{{ doc.employee_name }}</b> has submitted a leave request requiring your approval.</p>
+
+<table style="border-collapse: collapse; margin: 12px 0;">
+    <tr><td style="padding: 4px 12px;"><b>Leave Type:</b></td><td style="padding: 4px 12px;">{{ doc.leave_type }}</td></tr>
+    <tr><td style="padding: 4px 12px;"><b>From:</b></td><td style="padding: 4px 12px;">{{ frappe.utils.formatdate(doc.from_date) }}</td></tr>
+    <tr><td style="padding: 4px 12px;"><b>To:</b></td><td style="padding: 4px 12px;">{{ frappe.utils.formatdate(doc.to_date) }}</td></tr>
+    <tr><td style="padding: 4px 12px;"><b>Days:</b></td><td style="padding: 4px 12px;">{{ doc.total_leave_days }}</td></tr>
+    {% if doc.description %}
+    <tr><td style="padding: 4px 12px; vertical-align: top;"><b>Reason:</b></td><td style="padding: 4px 12px;">{{ doc.description }}</td></tr>
+    {% endif %}
+</table>
+
+<p><a href="{{ frappe.utils.get_url() }}/app/leave-application/{{ doc.name }}">Open {{ doc.name }} to review and approve</a></p>
