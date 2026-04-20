@@ -8,3 +8,7 @@ __pycache__/
 node_modules/
 dist/
 build/
+
+# Local/working docs — keep only README.md in the repo
+*.md
+!README.md

@@ -6,7 +6,7 @@ Run locally:
 
 Run inside the backend container:
     docker exec -it -u frappe frappe-backend-1 \
-        bench --site crm.hostedsip.co.za run-tests \
+        bench --site <your-site> run-tests \
         --module hrms_za.payroll_sa.tests.test_paye_calculator
 
 Each test is an independently computable SARS-style worked example.

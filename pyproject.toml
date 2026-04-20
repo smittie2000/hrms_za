@@ -1,7 +1,7 @@
 [project]
 name = "hrms_za"
 authors = [
-    { name = "HostedSIP", email = "claudecode@hostedcomms.co.za" },
+    { name = "HRMS-ZA Contributors", email = "hrms-za@example.com" },
 ]
 description = "South African localisation for Frappe HRMS v16"
 requires-python = ">=3.10"
