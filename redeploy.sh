@@ -53,6 +53,7 @@ PYTHON_VERSION="${PYTHON_VERSION:-3.14}"
 NODE_VERSION="${NODE_VERSION:-24}"
 BACKEND="${PROJECT}-backend-1"
 LOG="/tmp/hrms_za_rebuild.log"
+BACKUP_DIR="${BACKUP_DIR:-$HOME/frappe-backups}"
 
 say() { printf '\n=== %s ===\n' "$*"; }
 fail() { echo "FAIL: $*" >&2; exit "${2:-1}"; }
@@ -90,6 +91,21 @@ if [ "${SKIP_BUILD:-0}" != "1" ]; then
     echo "hrms_za present in image"
 else
     say "1/5  SKIP_BUILD=1 — reusing existing $IMAGE_TAG"
+fi
+
+# ─── 1b. Snapshot site_config.json BEFORE touching the stack ───────────
+# encryption_key lives in this file. Losing it = every stored credential
+# (email passwords, OAuth, LDAP, social login) becomes undecipherable.
+if docker ps --format '{{.Names}}' | grep -q "^${BACKEND}$"; then
+    mkdir -p "$BACKUP_DIR"
+    SNAPSHOT="$BACKUP_DIR/site_config.${SITE}.$(date +%Y%m%dT%H%M%S).json"
+    if docker exec -u frappe "$BACKEND" cat "sites/${SITE}/site_config.json" > "$SNAPSHOT" 2>/dev/null \
+       && python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$SNAPSHOT" 2>/dev/null; then
+        echo "site_config snapshot: $SNAPSHOT"
+    else
+        rm -f "$SNAPSHOT"
+        echo "WARN  could not snapshot site_config.json — continuing"
+    fi
 fi
 
 # ─── 2. Capture stale anonymous /assets volumes ─────────────────────────
@@ -137,6 +153,23 @@ for _ in $(seq 1 40); do
     printf "."
     sleep 3
 done
+
+# ─── 3b. Assert encryption_key survived the restart ─────────────────────
+# If `up` started with an empty sites volume, Frappe auto-generates a new
+# key on first request and silently orphans every previously-stored
+# credential. Abort loudly before migrate rather than discover it later.
+KEY_NOW=$(docker exec -u frappe "$BACKEND" python3 -c \
+    "import json; print(json.load(open('sites/${SITE}/site_config.json')).get('encryption_key',''))" 2>/dev/null || true)
+if [ -z "$KEY_NOW" ]; then
+    fail "encryption_key missing from site_config.json on $SITE — aborting before migrate" 2
+fi
+if [ -n "${SNAPSHOT:-}" ] && [ -f "$SNAPSHOT" ]; then
+    KEY_WAS=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('encryption_key',''))" "$SNAPSHOT" 2>/dev/null || true)
+    if [ -n "$KEY_WAS" ] && [ "$KEY_NOW" != "$KEY_WAS" ]; then
+        fail "encryption_key rotated during redeploy — stored credentials will not decrypt. Restore from $SNAPSHOT before continuing" 2
+    fi
+fi
+echo "encryption_key preserved"
 
 # ─── 4. Migrate + clear-cache ───────────────────────────────────────────
 say "4/5  Migrate + clear-cache"
