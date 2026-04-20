@@ -1,0 +1,196 @@
+{
+ "actions": [],
+ "creation": "2026-04-20 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "enablement_section",
+  "enabled",
+  "auto_assign_policy_on_hire",
+  "cycle_anchor_section",
+  "cycle_start_month",
+  "cycle_start_day",
+  "cycle_anchor_col_break",
+  "default_leave_policy",
+  "thresholds_section",
+  "sick_cycle_months",
+  "sick_days_per_cycle",
+  "low_balance_threshold_days",
+  "thresholds_col_break",
+  "annual_leave_carry_forward_max",
+  "two_step_approval_threshold_days",
+  "approver_fallback_section",
+  "default_approver_fallback_role",
+  "email_section",
+  "notification_from_email"
+ ],
+ "fields": [
+  {
+   "fieldname": "enablement_section",
+   "fieldtype": "Section Break",
+   "label": "Enablement"
+  },
+  {
+   "default": "1",
+   "description": "Master kill-switch for all SA-leave automation (doc events, scheduler tasks, button handlers).",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled"
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:doc.enabled",
+   "description": "When a new Employee is saved on an SA company, automatically create a submitted Leave Policy Assignment.",
+   "fieldname": "auto_assign_policy_on_hire",
+   "fieldtype": "Check",
+   "label": "Auto-Assign Leave Policy on Hire"
+  },
+  {
+   "fieldname": "cycle_anchor_section",
+   "fieldtype": "Section Break",
+   "label": "Leave Cycle Anchor"
+  },
+  {
+   "default": "1",
+   "description": "Month of year the annual leave cycle starts (1 = January).",
+   "fieldname": "cycle_start_month",
+   "fieldtype": "Int",
+   "label": "Cycle Start Month",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "description": "Day of month the annual leave cycle starts.",
+   "fieldname": "cycle_start_day",
+   "fieldtype": "Int",
+   "label": "Cycle Start Day",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "cycle_anchor_col_break",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "SA Standard Leave Policy",
+   "description": "Assigned to new hires when Auto-Assign is enabled. Seeded on install; edit to point at a tenant-specific policy if you want.",
+   "fieldname": "default_leave_policy",
+   "fieldtype": "Link",
+   "label": "Default Leave Policy",
+   "options": "Leave Policy"
+  },
+  {
+   "fieldname": "thresholds_section",
+   "fieldtype": "Section Break",
+   "label": "Thresholds"
+  },
+  {
+   "default": "36",
+   "description": "BCEA s22 rolling sick-leave window (months). Consumed by Phase 2 sick-cycle algorithm.",
+   "fieldname": "sick_cycle_months",
+   "fieldtype": "Int",
+   "label": "Sick Cycle Length (Months)",
+   "non_negative": 1
+  },
+  {
+   "default": "30",
+   "description": "BCEA s22 sick-leave entitlement per rolling cycle (days).",
+   "fieldname": "sick_days_per_cycle",
+   "fieldtype": "Int",
+   "label": "Sick Days Per Cycle",
+   "non_negative": 1
+  },
+  {
+   "default": "3",
+   "description": "Trigger weekly low-balance email when an employee's Annual Leave balance drops below this.",
+   "fieldname": "low_balance_threshold_days",
+   "fieldtype": "Float",
+   "label": "Low Balance Threshold (Days)",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "thresholds_col_break",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "5",
+   "description": "Cap on annual-leave days carried forward at cycle end (HR policy, not BCEA).",
+   "fieldname": "annual_leave_carry_forward_max",
+   "fieldtype": "Float",
+   "label": "Annual Leave Carry-Forward Max (Days)",
+   "non_negative": 1
+  },
+  {
+   "default": "10",
+   "description": "Reserved for Phase 3: requests exceeding this many days will require a second approver. Not active yet.",
+   "fieldname": "two_step_approval_threshold_days",
+   "fieldtype": "Float",
+   "label": "Two-Step Approval Threshold (Days)",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "approver_fallback_section",
+   "fieldtype": "Section Break",
+   "label": "Approver Fallback"
+  },
+  {
+   "default": "HR Manager",
+   "description": "Used when Employee.leave_approver is blank AND the employee's Department has no leave_approvers defined. The first active user holding this role receives approval emails.",
+   "fieldname": "default_approver_fallback_role",
+   "fieldtype": "Link",
+   "label": "Default Approver Fallback Role",
+   "options": "Role"
+  },
+  {
+   "fieldname": "email_section",
+   "fieldtype": "Section Break",
+   "label": "Email"
+  },
+  {
+   "description": "From-address used by the leave-automation scheduler tasks. Leave blank to use the site default Email Account.",
+   "fieldname": "notification_from_email",
+   "fieldtype": "Data",
+   "label": "Notification From Email",
+   "options": "Email"
+  }
+ ],
+ "icon": "fa fa-calendar-check-o",
+ "idx": 0,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-04-20 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Payroll SA",
+ "name": "SA Leave Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "HR User"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "ASC",
+ "states": [],
+ "track_changes": 1
+}

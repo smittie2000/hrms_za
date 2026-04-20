@@ -51,6 +51,7 @@ def setup_site_wide():
     install_employment_types()
     install_leave_types()
     install_salary_components()
+    install_sa_leave_settings_defaults()
 
 
 def install_custom_fields():
@@ -90,6 +91,52 @@ def install_salary_components():
             frappe.get_doc({"doctype": "Salary Component", **payload}).insert(
                 ignore_permissions=True
             )
+
+
+def install_sa_leave_settings_defaults():
+    """
+    Populate SA Leave Settings (Single) with sensible first-run defaults.
+
+    Contract: only fill fields that are currently empty. HR edits survive
+    re-install. The DocType ships `default` attributes on every field — this
+    seeder just promotes those defaults from "render hint" to persisted value
+    so downstream `frappe.get_single(...)` always sees concrete data.
+
+    `default_leave_policy` is special: only set if the policy record exists.
+    `install_leave_policy()` (step 2 of the plan) seeds the policy earlier in
+    `setup_site_wide()`, so the link target is normally available by the time
+    this runs. Guarded anyway — re-installs where the policy was deleted
+    shouldn't clobber the link with a dangling value.
+    """
+    defaults = {
+        "enabled": 1,
+        "auto_assign_policy_on_hire": 1,
+        "cycle_start_month": 1,
+        "cycle_start_day": 1,
+        "sick_cycle_months": 36,
+        "sick_days_per_cycle": 30,
+        "low_balance_threshold_days": 3,
+        "annual_leave_carry_forward_max": 5,
+        "two_step_approval_threshold_days": 10,
+        "default_approver_fallback_role": "HR Manager",
+    }
+
+    settings = frappe.get_single("SA Leave Settings")
+    changed = False
+
+    for fieldname, value in defaults.items():
+        if not settings.get(fieldname):
+            settings.set(fieldname, value)
+            changed = True
+
+    if not settings.get("default_leave_policy") and frappe.db.exists(
+        "Leave Policy", "SA Standard Leave Policy"
+    ):
+        settings.set("default_leave_policy", "SA Standard Leave Policy")
+        changed = True
+
+    if changed:
+        settings.save(ignore_permissions=True)
 
 
 # ---------------------------------------------------------------------------
