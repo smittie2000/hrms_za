@@ -74,8 +74,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "SA Standard Leave Policy",
-   "description": "Assigned to new hires when Auto-Assign is enabled. Seeded on install; edit to point at a tenant-specific policy if you want.",
+   "description": "Assigned to new hires when Auto-Assign is enabled. Populated by the installer to the seeded SA Standard Leave Policy; edit to point at a tenant-specific policy if you want.",
    "fieldname": "default_leave_policy",
    "fieldtype": "Link",
    "label": "Default Leave Policy",

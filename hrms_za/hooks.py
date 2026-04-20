@@ -16,4 +16,18 @@ doc_events = {
     "Salary Slip": {
         "validate": "hrms_za.payroll_sa.paye_calculator.adjust_sa_paye",
     },
+    "Employee": {
+        "after_insert": "hrms_za.regional.south_africa.leave.assign_default_policy",
+    },
+}
+
+
+scheduler_events = {
+    "daily_long": [
+        "hrms_za.regional.south_africa.leave.recompute_sick_leave_cycles",
+    ],
+    "weekly": [
+        "hrms_za.regional.south_africa.leave.nudge_pending_leave_approvals",
+        "hrms_za.regional.south_africa.leave.email_low_balance_employees",
+    ],
 }
