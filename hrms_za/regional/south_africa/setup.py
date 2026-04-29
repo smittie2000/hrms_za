@@ -21,7 +21,10 @@ from hrms_za.regional.south_africa.data.leave_policy import (
     LEAVE_POLICY_DETAILS,
     LEAVE_POLICY_NAME,
 )
-from hrms_za.regional.south_africa.data.leave_types import LEAVE_TYPES
+from hrms_za.regional.south_africa.data.leave_types import (
+    HR_MANAGER_ROLE,
+    LEAVE_TYPES,
+)
 from hrms_za.regional.south_africa.data.notifications import NOTIFICATIONS
 from hrms_za.regional.south_africa.data.salary_components import SALARY_COMPONENTS
 
@@ -61,8 +64,21 @@ def after_install():
 
 
 def on_company_update(doc, method=None):
-    """Re-run setup whenever a Company is saved with country=South Africa."""
+    """
+    Run SA setup when a Company first becomes (or is created as) South Africa.
+
+    Gated on `country` change: a routine save (logo, tagline, anything not
+    touching country) skips the heavy site-wide block. Without this gate
+    every Company.on_update re-ran custom-field create, leave-type upserts,
+    salary-component upserts, and notification reads — wasted work on every
+    Company save.
+
+    `has_value_changed` returns True for new docs too, so the install path
+    (Company created with country=South Africa) still triggers the full setup.
+    """
     if doc.country != "South Africa":
+        return
+    if not doc.has_value_changed("country"):
         return
     setup_site_wide()
     setup_per_company(doc.name)
@@ -189,7 +205,7 @@ def install_sa_leave_settings_defaults():
         "low_balance_threshold_days": 3,
         "annual_leave_carry_forward_max": 5,
         "two_step_approval_threshold_days": 10,
-        "default_approver_fallback_role": "HR Manager",
+        "default_approver_fallback_role": HR_MANAGER_ROLE,
     }
 
     settings = frappe.get_single("SA Leave Settings")
@@ -221,17 +237,15 @@ def install_notifications():
     so HR can freely amend message bodies or subjects without the seeder
     fighting back.
     """
-    import os
-
-    base_path = os.path.join(
-        os.path.dirname(__file__), "data", "email_bodies"
+    base_path = frappe.get_app_path(
+        "hrms_za", "regional", "south_africa", "data", "email_bodies",
     )
 
     for name, body_file, payload in NOTIFICATIONS:
         if frappe.db.exists("Notification", name):
             continue
 
-        body = frappe.read_file(os.path.join(base_path, body_file))
+        body = frappe.read_file(f"{base_path}/{body_file}")
         frappe.get_doc({
             "doctype": "Notification",
             "name": name,
@@ -357,16 +371,19 @@ def install_leave_period_for_current_year(company):
 
 def anchor_date(year, month, day):
     """
-    Return a `datetime.date` for (year, month, day), normalising Feb 29 to
-    Feb 28 in non-leap years. Any other invalid month/day combo is blocked
-    upstream by SALeaveSettings.validate().
+    Return a `datetime.date` for (year, month, day), clamping `day` to the
+    last valid day of `month` in `year`. Handles the Feb-29-in-non-leap-year
+    case AND any other (month, day) where the day exceeds the month's length
+    (e.g. cycle anchored on the 31st rolled into a 30-day month).
+    SALeaveSettings.validate() blocks invalid configs at save time, but
+    current_cycle_window_for_date calls anchor_date for year ± 1 too — those
+    rolls don't go through validate, so we clamp defensively here.
     """
+    import calendar
     from datetime import date
 
-    try:
-        return date(year, month, day)
-    except ValueError:
-        return date(year, month, day - 1)
+    last_day = calendar.monthrange(year, month)[1]
+    return date(year, month, min(day, last_day))
 
 
 def current_cycle_window_for_date(reference_date):

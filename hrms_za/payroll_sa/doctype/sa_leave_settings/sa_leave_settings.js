@@ -1,47 +1,49 @@
-// Action buttons for SA Leave Settings.
-//
-// Each button:
-//   1. Prompts for any arguments it needs.
-//   2. Confirms destructive/bulk actions with a dialog.
-//   3. Calls the whitelisted backend method.
-//   4. Renders a toast summarising created / skipped / failed counts.
-//
-// The backend methods live in hrms_za.regional.south_africa.leave and all
-// return a {"created": N, "skipped": N, "failed": [...]} dict.
-
 frappe.ui.form.on("SA Leave Settings", {
     refresh(frm) {
-        frm.add_custom_button(__("Seed Leave Period for Year"),
-            () => run_with_year(frm, __("Seed Leave Period"),
-                "hrms_za.regional.south_africa.leave.seed_leave_period"),
-            __("Actions"));
+        const group = __("Actions");
+        const buttons = [
+            {
+                label: __("Seed Leave Period for Year"),
+                handler: () => run_with_year(frm, __("Seed Leave Period"),
+                    "hrms_za.regional.south_africa.leave.seed_leave_period"),
+            },
+            {
+                label: __("Generate Leave Policy Assignments for Year"),
+                handler: () => run_with_year(frm,
+                    __("Generate Leave Policy Assignments"),
+                    "hrms_za.regional.south_africa.leave.generate_sa_leave_allocations"),
+            },
+            {
+                label: __("Auto-Fill Leave Approvers"),
+                handler: () => run_simple(frm, __("Auto-Fill Leave Approvers"),
+                    "hrms_za.regional.south_africa.leave.auto_fill_leave_approvers",
+                    __("Set each Employee's leave_approver from their Department's approver chain, falling back to the default role. Existing approvers are preserved.")),
+            },
+            {
+                label: __("Provision Employee Users (ESS)"),
+                handler: () => run_simple(frm, __("Provision Employee Users"),
+                    "hrms_za.regional.south_africa.leave.provision_employee_users",
+                    __("Create a User (role: Employee Self Service) for every Employee with a company_email and no user_id. Does NOT send welcome emails automatically — flip Send Welcome Email on the User form when ready.")),
+            },
+            {
+                label: __("Generate SA Holiday List for Year"),
+                handler: () => generate_holiday_list(frm),
+            },
+            {
+                label: __("Recompute Sick Leave Cycles"),
+                handler: () => run_simple(frm, __("Recompute Sick Leave Cycles"),
+                    "hrms_za.regional.south_africa.leave.recompute_sick_leave_cycles",
+                    __("Phase-2 stub — will recompute every employee's fixed-cycle 36-month sick-leave balance once the Phase 2 algorithm lands. Safe to click now (it just returns a status).")),
+            },
+        ];
 
-        frm.add_custom_button(__("Generate Leave Policy Assignments for Year"),
-            () => run_with_year(frm, __("Generate Leave Policy Assignments"),
-                "hrms_za.regional.south_africa.leave.generate_sa_leave_allocations"),
-            __("Actions"));
-
-        frm.add_custom_button(__("Auto-Fill Leave Approvers"),
-            () => run_simple(frm, __("Auto-Fill Leave Approvers"),
-                "hrms_za.regional.south_africa.leave.auto_fill_leave_approvers",
-                __("Set each Employee's leave_approver from their Department's approver chain, falling back to the default role. Existing approvers are preserved.")),
-            __("Actions"));
-
-        frm.add_custom_button(__("Provision Employee Users (ESS)"),
-            () => run_simple(frm, __("Provision Employee Users"),
-                "hrms_za.regional.south_africa.leave.provision_employee_users",
-                __("Create a User (role: Employee Self Service) for every Employee with a company_email and no user_id. Does NOT send welcome emails automatically — flip Send Welcome Email on the User form when ready.")),
-            __("Actions"));
-
-        frm.add_custom_button(__("Generate SA Holiday List for Year"),
-            () => generate_holiday_list(frm),
-            __("Actions"));
-
-        frm.add_custom_button(__("Recompute Sick Leave Cycles"),
-            () => run_simple(frm, __("Recompute Sick Leave Cycles"),
-                "hrms_za.regional.south_africa.leave.recompute_sick_leave_cycles",
-                __("Phase-2 stub — will recompute every employee's rolling 36-month sick-leave balance once the Phase 2 algorithm lands. Safe to click now (it just returns a status).")),
-            __("Actions"));
+        // Skip if buttons already attached this lifecycle — refresh fires
+        // on every field change, and re-binding allocates a fresh handler
+        // closure each time even though add_custom_button dedupes the DOM.
+        for (const btn of buttons) {
+            if (frm.custom_buttons[btn.label]) continue;
+            frm.add_custom_button(btn.label, btn.handler, group);
+        }
     },
 });
 
@@ -90,9 +92,6 @@ function run_simple(frm, title, method, confirm_text) {
 
 
 function generate_holiday_list(frm) {
-    // Wraps the existing whitelisted helper shipped in
-    // hrms_za.regional.south_africa.holidays.generate_sa_holiday_list.
-    // That helper expects (year, company=None, set_as_default=True).
     frappe.prompt(
         [
             {
@@ -159,7 +158,6 @@ function show_result_toast(title, result) {
     }, 10);
 
     if (failed > 0) {
-        // Dump failure reasons into the JS console for debugging.
         console.warn(`[${title}] failures:`, result.failed);
     }
 }

@@ -14,12 +14,18 @@ it — not edit this file.
 
 References:
 - BCEA s20: Annual Leave — 15 working days per 12-month cycle.
-- BCEA s22: Sick Leave — 30 days per 36-month rolling cycle (modelled as
-  flat 30 here; rolling window is a Phase 2 build).
+- BCEA s22: Sick Leave — 30 days per fixed 36-month cycle (modelled as
+  flat 30 here; cycle-aware allocation is a Phase 2 build).
 - BCEA s25:  Maternity Leave — 4 consecutive months.
 - BCEA s25A: Parental Leave — 10 consecutive days.
 - BCEA s27:  Family Responsibility Leave — 3 days per year.
 """
+
+
+from hrms_za.regional.south_africa.data.leave_types import (
+    ANNUAL_LEAVE_TYPE,
+    SICK_LEAVE_TYPE,
+)
 
 
 LEAVE_POLICY_NAME = "SA Standard Leave Policy"
@@ -30,8 +36,8 @@ LEAVE_POLICY_NAME = "SA Standard Leave Policy"
 # fieldname on Leave Policy; `leave_type` + `annual_allocation` are the
 # child row columns (verified against hrms/hr/doctype/leave_policy_detail).
 LEAVE_POLICY_DETAILS = [
-    {"leave_type": "Annual Leave (SA)",                 "annual_allocation": 15},
-    {"leave_type": "Sick Leave (SA)",                   "annual_allocation": 30},
+    {"leave_type": ANNUAL_LEAVE_TYPE,                   "annual_allocation": 15},
+    {"leave_type": SICK_LEAVE_TYPE,                     "annual_allocation": 30},
     {"leave_type": "Family Responsibility Leave (SA)",  "annual_allocation": 3},
     {"leave_type": "Maternity Leave (SA)",              "annual_allocation": 120},
     {"leave_type": "Parental Leave (SA)",               "annual_allocation": 10},

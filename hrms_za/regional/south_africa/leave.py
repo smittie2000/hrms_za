@@ -1,18 +1,13 @@
 """
 South African leave-automation runtime.
 
-Three layers of callables here:
-
-1. Employee doc-event hook (`assign_default_policy`) — auto-assigns the SA
-   Standard Leave Policy to new hires. Wrapped in try/except so a
-   misconfigured install can't block HR from saving an Employee.
-
-2. Whitelisted bulk helpers — exposed as action buttons on SA Leave Settings.
-   All idempotent; all return `{created, skipped, failed}` for the UI toast.
-
-3. Scheduler tasks — wired via `scheduler_events` in hooks.py.
-
-All config reads from `SA Leave Settings` Single — no hardcoded values.
+Layout:
+- `assign_default_policy` runs from Employee.after_insert; the try/except
+  wrapper exists because a misconfigured install must never block HR from
+  saving an Employee record.
+- Bulk helpers are whitelisted; all return `{created, skipped, failed}`
+  so sa_leave_settings.js can render a uniform toast.
+- Scheduler tasks at the bottom wire to scheduler_events in hooks.py.
 """
 
 import frappe
@@ -20,6 +15,10 @@ from frappe import _
 from frappe.utils import date_diff, getdate
 from frappe.utils.user import get_users_with_role
 
+from hrms_za.regional.south_africa.data.leave_types import (
+    ANNUAL_LEAVE_TYPE,
+    HR_MANAGER_ROLE,
+)
 from hrms_za.regional.south_africa.setup import (
     anchor_date,
     current_cycle_window_for_date,
@@ -27,8 +26,6 @@ from hrms_za.regional.south_africa.setup import (
 )
 
 
-# Status constants returned by _apply_policy_for_employee. The bulk path
-# and the doc-event hook both branch on these.
 _POLICY_APPLIED = "applied"
 _POLICY_SKIPPED_NO_DOJ = "no_doj"
 _POLICY_SKIPPED_NO_POLICY = "no_policy"
@@ -76,29 +73,25 @@ def _try_assign_default_policy(employee):
         or resolve_sa_standard_leave_policy()
     )
 
-    period_name = _resolve_current_leave_period(employee.company)
-    period_from = period_to = None
-    if period_name:
-        lp = frappe.get_doc("Leave Period", period_name)
-        period_from, period_to = lp.from_date, lp.to_date
+    period = _resolve_current_leave_period(employee.company)
 
-    status = _apply_policy_for_employee(
-        employee, policy_name, period_name, period_from, period_to,
-    )
+    status = _apply_policy_for_employee(employee, policy_name, period)
     if status == _POLICY_APPLIED:
         return True
 
-    _skip_with_comment(employee, _policy_skip_message(status, employee, period_to))
+    period_to = period.to_date if period else None
+    employee.add_comment("Info", _policy_skip_message(status, employee, period_to))
     return False
 
 
-def _apply_policy_for_employee(emp, policy_name, period_name, period_from, period_to):
+def _apply_policy_for_employee(emp, policy_name, period):
     """
     Run the guard chain and create + submit a Leave Policy Assignment if all
     guards pass. Returns one of the `_POLICY_*` status constants.
 
     `emp` is a full Employee doc OR a _dict from `get_all` — both expose the
-    same `.name` / `.date_of_joining` attribute access.
+    same `.name` / `.date_of_joining` attribute access. `period` is a dict
+    (or frappe._dict) with `.name` / `.from_date` / `.to_date`, or None.
     """
     if not emp.date_of_joining:
         return _POLICY_SKIPPED_NO_DOJ
@@ -106,18 +99,18 @@ def _apply_policy_for_employee(emp, policy_name, period_name, period_from, perio
     if not policy_name or not frappe.db.exists("Leave Policy", policy_name):
         return _POLICY_SKIPPED_NO_POLICY
 
-    if not period_name:
+    if not period:
         return _POLICY_SKIPPED_NO_PERIOD
 
-    effective_from = max(getdate(emp.date_of_joining), getdate(period_from))
-    effective_to = getdate(period_to)
+    effective_from = max(getdate(emp.date_of_joining), getdate(period.from_date))
+    effective_to = getdate(period.to_date)
     if date_diff(effective_to, effective_from) < 90:
         return _POLICY_SKIPPED_SHORT_TENURE
 
     _create_leave_policy_assignment(
         employee=emp.name,
         policy_name=policy_name,
-        leave_period=period_name,
+        leave_period=period.name,
         effective_from=effective_from,
         effective_to=effective_to,
     )
@@ -146,23 +139,19 @@ def _policy_skip_message(status, employee, period_to):
     return f"Leave policy not assigned (status: {status})"
 
 
-def _skip_with_comment(employee, message):
-    employee.add_comment("Info", message)
-
-
 def _resolve_current_leave_period(company):
-    """Active Leave Period whose window contains today, for `company`."""
+    """
+    Active Leave Period (name + from_date + to_date) whose window contains
+    today, for `company`. None if no period covers today.
+
+    Delegates to HRMS's canonical helper so we benefit from any upstream
+    fixes (overlap semantics, edge-case Leave Period configs).
+    """
+    from hrms.hr.utils import get_leave_period
+
     today = frappe.utils.today()
-    return frappe.db.get_value(
-        "Leave Period",
-        {
-            "company": company,
-            "from_date": ["<=", today],
-            "to_date": [">=", today],
-            "is_active": 1,
-        },
-        "name",
-    )
+    periods = get_leave_period(today, today, company)
+    return periods[0] if periods else None
 
 
 def _create_leave_policy_assignment(
@@ -216,13 +205,24 @@ def _sa_companies(company=None):
     return frappe.get_all("Company", filters=filters, pluck="name")
 
 
-def _active_sa_employees(company=None):
+def _active_sa_employees(company=None, with_user_id=False):
+    """
+    Active SA Employees (across one or all SA companies).
+
+    `with_user_id=True` filters out employees with no linked User — the
+    weekly low-balance email job has nowhere to send if user_id is blank,
+    so do that filter at the SQL level rather than discarding rows after
+    fetching balances.
+    """
     companies = _sa_companies(company)
     if not companies:
         return []
+    filters = {"status": "Active", "company": ["in", companies]}
+    if with_user_id:
+        filters["user_id"] = ["is", "set"]
     return frappe.get_all(
         "Employee",
-        filters={"status": "Active", "company": ["in", companies]},
+        filters=filters,
         fields=["name", "company", "date_of_joining", "leave_approver",
                 "department", "company_email", "user_id", "employee_name"],
     )
@@ -296,16 +296,12 @@ def generate_sa_leave_allocations(year, company=None):
 
     for emp in employees:
         try:
-            period_name, period_from, period_to = period_cache.get(
-                emp.company, (None, None, None),
-            )
-            if period_name and _has_active_assignment(emp.name, period_name):
+            period = period_cache.get(emp.company)
+            if period and _has_active_assignment(emp.name, period.name):
                 result["skipped"] += 1
                 continue
 
-            status = _apply_policy_for_employee(
-                emp, policy_name, period_name, period_from, period_to,
-            )
+            status = _apply_policy_for_employee(emp, policy_name, period)
             if status == _POLICY_APPLIED:
                 result["created"] += 1
             elif status == _POLICY_SKIPPED_NO_PERIOD:
@@ -322,7 +318,7 @@ def generate_sa_leave_allocations(year, company=None):
 
 
 def _prefetch_leave_periods_for_year(companies, year):
-    """Return {company: (name, from_date, to_date)} for periods whose from_date year == `year`."""
+    """Return {company: frappe._dict(name, from_date, to_date)} for periods whose from_date year == `year`."""
     if not companies:
         return {}
     year = int(year)
@@ -332,7 +328,7 @@ def _prefetch_leave_periods_for_year(companies, year):
         fields=["name", "company", "from_date", "to_date"],
     )
     return {
-        r.company: (r.name, r.from_date, r.to_date)
+        r.company: frappe._dict(name=r.name, from_date=r.from_date, to_date=r.to_date)
         for r in rows
         if getdate(r.from_date).year == year
     }
@@ -363,46 +359,52 @@ def auto_fill_leave_approvers(company=None):
     if not employees:
         return result
 
-    # One query for every Department Approver chain we'll need.
     departments = {e.department for e in employees if e.department}
-    dept_to_approver = {
-        row.parent: row.approver
-        for row in frappe.get_all(
-            "Department Approver",
-            filters={
-                "parent": ["in", list(departments)] if departments else [""],
-                "parentfield": "leave_approvers",
-                "idx": 1,
-            },
-            fields=["parent", "approver"],
-        )
-    } if departments else {}
+    dept_to_approver = {}
+    if departments:
+        dept_to_approver = {
+            row.parent: row.approver
+            for row in frappe.get_all(
+                "Department Approver",
+                filters={
+                    "parent": ["in", list(departments)],
+                    "parentfield": "leave_approvers",
+                    "idx": 1,
+                },
+                fields=["parent", "approver"],
+            )
+        }
 
-    # Fallback is the same for every employee — resolve once.
     fallback_user = None
     if fallback_role:
         users = get_users_with_role(fallback_role)
         fallback_user = users[0] if users else None
 
+    by_approver = {}
     for emp in employees:
+        if emp.leave_approver:
+            result["skipped"] += 1
+            continue
+
+        approver = dept_to_approver.get(emp.department) or fallback_user
+        if not approver:
+            _record_failure(
+                result,
+                f"{emp.name}: no approver resolvable from Department "
+                f"or fallback role",
+            )
+            continue
+        by_approver.setdefault(approver, []).append(emp.name)
+
+    for approver, emp_names in by_approver.items():
         try:
-            if emp.leave_approver:
-                result["skipped"] += 1
-                continue
-
-            approver = dept_to_approver.get(emp.department) or fallback_user
-            if not approver:
-                _record_failure(
-                    result,
-                    f"{emp.name}: no approver resolvable from Department "
-                    f"or fallback role",
-                )
-                continue
-
-            frappe.db.set_value("Employee", emp.name, "leave_approver", approver)
-            result["created"] += 1
+            frappe.db.set_value(
+                "Employee", {"name": ["in", emp_names]}, "leave_approver", approver,
+            )
+            result["created"] += len(emp_names)
         except Exception as exc:
-            _record_failure(result, f"{emp.name}: {exc}")
+            for n in emp_names:
+                _record_failure(result, f"{n}: {exc}")
 
     return result
 
@@ -427,11 +429,13 @@ def provision_employee_users(company=None):
         e.company_email for e in employees
         if e.company_email and not e.user_id
     }
-    existing_users = set(frappe.get_all(
-        "User",
-        filters={"email": ["in", list(pending_emails)]} if pending_emails else {"email": ""},
-        pluck="name",
-    )) if pending_emails else set()
+    existing_users = set()
+    if pending_emails:
+        existing_users = set(frappe.get_all(
+            "User",
+            filters={"email": ["in", list(pending_emails)]},
+            pluck="name",
+        ))
 
     for emp in employees:
         try:
@@ -526,13 +530,14 @@ def nudge_pending_leave_approvals():
             )
         body_lines.append("</ul>")
 
+        # No reference_doctype/reference_name on this digest: it summarises
+        # multiple Leave Applications, and pinning the Communication record
+        # to an arbitrary first item misleads later audit lookups.
         frappe.sendmail(
             recipients=[approver],
             sender=sender,
             subject=_("Leave Applications awaiting your approval"),
             message="\n".join(body_lines),
-            reference_doctype="Leave Application",
-            reference_name=items[0].name,
         )
 
 
@@ -549,23 +554,20 @@ def email_low_balance_employees():
     settings = frappe.get_cached_doc("SA Leave Settings")
     threshold = float(settings.get("low_balance_threshold_days") or 0)
     sender = settings.get("notification_from_email") or None
-    fallback_role = settings.get("default_approver_fallback_role") or "HR Manager"
+    fallback_role = settings.get("default_approver_fallback_role") or HR_MANAGER_ROLE
 
     if threshold <= 0:
         return
 
-    annual_leave_type = "Annual Leave (SA)"
-    if not frappe.db.exists("Leave Type", annual_leave_type):
+    if not frappe.db.exists("Leave Type", ANNUAL_LEAVE_TYPE):
         return
 
     today = frappe.utils.today()
     hr_users = get_users_with_role(fallback_role) if fallback_role else []
 
-    for emp in _active_sa_employees():
-        if not emp.user_id:
-            continue
+    for emp in _active_sa_employees(with_user_id=True):
         try:
-            balance = get_leave_balance_on(emp.name, annual_leave_type, today)
+            balance = get_leave_balance_on(emp.name, ANNUAL_LEAVE_TYPE, today)
         except Exception:
             continue
 

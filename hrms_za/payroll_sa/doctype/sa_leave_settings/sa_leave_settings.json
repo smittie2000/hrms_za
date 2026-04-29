@@ -87,7 +87,7 @@
   },
   {
    "default": "36",
-   "description": "BCEA s22 rolling sick-leave window (months). Consumed by Phase 2 sick-cycle algorithm.",
+   "description": "BCEA s22 sick-leave cycle length in months (default 36). Cycles run as fixed consecutive blocks from the employee's first day of work — not a rolling window. Consumed by Phase 2 sick-cycle algorithm.",
    "fieldname": "sick_cycle_months",
    "fieldtype": "Int",
    "label": "Sick Cycle Length (Months)",
@@ -95,7 +95,7 @@
   },
   {
    "default": "30",
-   "description": "BCEA s22 sick-leave entitlement per rolling cycle (days).",
+   "description": "BCEA s22 sick-leave entitlement per fixed cycle (days).",
    "fieldname": "sick_days_per_cycle",
    "fieldtype": "Int",
    "label": "Sick Days Per Cycle",

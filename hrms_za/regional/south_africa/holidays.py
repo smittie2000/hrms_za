@@ -69,7 +69,6 @@ def generate_sa_holiday_list(
         doc.insert(ignore_permissions=True)
     else:
         doc.save(ignore_permissions=True)
-    frappe.db.commit()
 
     result = {
         "holiday_list":   name,
@@ -81,7 +80,6 @@ def generate_sa_holiday_list(
 
     if company and set_as_default and frappe.db.exists("Company", company):
         frappe.db.set_value("Company", company, "default_holiday_list", name)
-        frappe.db.commit()
         result["default_on_company"] = company
 
     return result

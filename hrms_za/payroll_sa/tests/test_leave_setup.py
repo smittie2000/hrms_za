@@ -11,8 +11,11 @@ Run inside the backend container:
         bench --site <your-site> run-tests \\
         --module hrms_za.payroll_sa.tests.test_leave_setup
 
-The tests create a throwaway SA `Company` + `Employee` per class; clean-up
-in `tearDownClass` drops them. Nothing here should touch the tenant data.
+FrappeTestCase wraps each test_* method in its own savepoint, so writes
+INSIDE a test method roll back automatically. Records created in
+`setUpClass` (Companies, Employees, Leave Periods) DO NOT roll back —
+this module's `tearDownClass` deletes those explicitly so a re-run starts
+clean. Nothing here should touch real tenant data.
 """
 
 import unittest
@@ -83,6 +86,75 @@ def _ensure_test_employee(company, date_of_joining, name_suffix="1"):
 
 def _settings():
     return frappe.get_single("SA Leave Settings")
+
+
+def _purge_test_employees_and_dependencies(companies):
+    """
+    Delete every Employee whose employee_name starts with the
+    'hrms_za_test_employee_' marker, plus their LPAs / Comments / Leave
+    Periods on the supplied test companies. Safe to call when nothing was
+    seeded — every step is exists-checked.
+
+    Companies are deliberately NOT deleted: Frappe blocks Company deletion
+    once child Account / Cost Center records have been auto-created, and
+    the test classes' setUpClass paths are idempotent (`_ensure_company`).
+    """
+    test_employees = frappe.get_all(
+        "Employee",
+        filters={"employee_name": ["like", "hrms_za_test_employee_%"]},
+        pluck="name",
+    )
+
+    if test_employees:
+        for lpa in frappe.get_all(
+            "Leave Policy Assignment",
+            filters={"employee": ["in", test_employees]},
+            pluck="name",
+        ):
+            try:
+                frappe.delete_doc(
+                    "Leave Policy Assignment", lpa,
+                    ignore_permissions=True, force=True,
+                )
+            except Exception:
+                pass
+
+        for cmt in frappe.get_all(
+            "Comment",
+            filters={
+                "reference_doctype": "Employee",
+                "reference_name": ["in", test_employees],
+            },
+            pluck="name",
+        ):
+            try:
+                frappe.delete_doc(
+                    "Comment", cmt, ignore_permissions=True, force=True,
+                )
+            except Exception:
+                pass
+
+        for emp in test_employees:
+            try:
+                frappe.delete_doc(
+                    "Employee", emp, ignore_permissions=True, force=True,
+                )
+            except Exception:
+                pass
+
+    for lp in frappe.get_all(
+        "Leave Period",
+        filters={"company": ["in", list(companies)]},
+        pluck="name",
+    ):
+        try:
+            frappe.delete_doc(
+                "Leave Period", lp, ignore_permissions=True, force=True,
+            )
+        except Exception:
+            pass
+
+    frappe.db.commit()
 
 
 # -----------------------------------------------------------------------------
@@ -206,6 +278,13 @@ class TestEmployeeAutoAssign(FrappeTestCase):
                 "is_active": 1,
             }).insert(ignore_permissions=True)
 
+    @classmethod
+    def tearDownClass(cls):
+        _purge_test_employees_and_dependencies(
+            {TEST_COMPANY_NAME, TEST_NON_SA_COMPANY},
+        )
+        super().tearDownClass()
+
     def test_sa_employee_with_doj_gets_assignment(self):
         emp = _ensure_test_employee(
             TEST_COMPANY_NAME, add_days(today(), -30), name_suffix="sa_with_doj"
@@ -278,6 +357,11 @@ class TestApproverResolution(FrappeTestCase):
         super().setUpClass()
         install_sa_leave_settings_defaults()
         _ensure_company(TEST_COMPANY_NAME, TEST_COMPANY_ABBR, "South Africa")
+
+    @classmethod
+    def tearDownClass(cls):
+        _purge_test_employees_and_dependencies({TEST_COMPANY_NAME})
+        super().tearDownClass()
 
     def test_auto_fill_skips_employees_with_existing_approver(self):
         emp = _ensure_test_employee(
